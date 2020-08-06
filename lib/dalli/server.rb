@@ -71,7 +71,7 @@ module Dalli
       rescue Dalli::MarshalError => ex
         Dalli.logger.error "Marshalling error for key '#{args.first}': #{ex.message}"
         Dalli.logger.error "You are trying to cache a Ruby object which cannot be serialized to memcached."
-        Dalli.logger.error ex.backtrace.join("\n\t")
+        Dalli.logger.error ex.backtrace.join("\n\t") if ENV['DALLI_PRINT_VALUE_OF_MARSHAL_ERROR']
         false
       rescue Dalli::DalliError, Dalli::NetworkError, Dalli::ValueOverMaxSize, Timeout::Error
         raise
@@ -418,6 +418,8 @@ module Dalli
           # Convert to a specific exception so we can special case it higher up the stack.
           exc = Dalli::MarshalError.new(ex.message)
           exc.set_backtrace ex.backtrace
+
+          Dalli.logger.error("Dalli::MarshalError for value '#{value}'") if ENV['DALLI_PRINT_VALUE_OF_MARSHAL_ERROR']
           raise exc
         end
       else
